@@ -1,43 +1,39 @@
 const express = require('express');
-const router = express.Router();
-const Subscriber = require('./models/subscribers');
+const app = express();
+const mongoose = require('mongoose');
+const { off } = require('../models/product.js');
+const products   =require("../models/product.js");
 
-// GET /subscribers
-router.get('/subscribers', async (req, res) => {
-  try {
-    const subscribers = await Subscriber.find();
-    res.send(subscribers);
-  } catch (err) {
-    res.status(500).send({ message: err.message });
-  }
+// Import routes
+
+//Router Middlewares
+app.use(express.json());
+
+
+//default value for limit is 5 and offset is 0
+//This route should return an array of _id of all the element that need to be rturned.
+//output id can be in any order.
+
+app.get("/",async function(req,res){
+
+    var limit=req.query.limit,offset=req.query.offset;
+
+    if(limit == null) limit = 5;
+    else limit = parseInt(limit);
+    if(offset == null) offset=0;
+    else offset = parseInt(offset);
+
+    if(limit > 5) limit = 5;
+
+    result = await products.find({});
+
+    var ids = [];
+    const startt = (limit*offset);
+
+    for(var i = startt; i < result.length && i < (startt+limit) ; i++) ids.push(result[i]["_id"]);
+
+    res.send(ids);
+
 });
 
-// GET /subscribers/names
-router.get('/subscribers/names', async (req, res) => {
-  try {
-    const subscribers = await Subscriber.find({}, { name: 1, subscribedChannel: 1 });
-    res.send(subscribers);
-  } catch (err) {
-    res.status(500).send({ message: err.message });
-  }
-});
-
-// GET /subscribers/:id
-router.get('/subscribers/:id', getSubscriber, (req, res) => {
-  res.send(res.subscriber);
-});
-
-async function getSubscriber(req, res, next) {
-  try {
-    const subscriber = await Subscriber.findById(req.params.id);
-    if (subscriber == null) {
-      return res.status(400).send({ message: 'Cannot find subscriber' });
-    }
-    res.subscriber = subscriber;
-    next();
-  } catch (err) {
-    return res.status(500).send({ message: err.message });
-  }
-}
-
-module.exports = router;
+module.exports = app;
